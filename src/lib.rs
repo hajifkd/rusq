@@ -1,7 +1,12 @@
+#[macro_use]
+extern crate lazy_static;
+#[macro_use]
+extern crate ndarray;
 extern crate num;
 extern crate rand;
 
 pub mod simulator;
+pub mod gates;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum MeasuredResult {
