@@ -40,11 +40,13 @@ fn double_mask_tuple(qubit1: &Qubit, qubit2: &Qubit) -> (usize, usize, usize) {
     }
 }
 
-fn triple_mask_tuple(qubits: &mut [&Qubit; 3]) -> (usize, usize, usize, usize) {
+fn triple_mask_tuple(mut qubits: [&Qubit; 3]) -> (usize, usize, usize, usize) {
     qubits.sort_by(|a, b| a.index.cmp(&b.index));
     let u = 0xFFFF_FFFF_FFFF_FFFFusize << (qubits[2].index + 1);
-    let m1 = ((0xFFFF_FFFF_FFFF_FFFFusize << (qubits[1].index + 2)) | (!u)) >> 1;
-    let m2 = ((0xFFFF_FFFF_FFFF_FFFFusize << (qubits[0].index + 2)) | (!u) | (!m1)) >> 1;
+    let m1 = (0xFFFF_FFFF_FFFF_FFFFusize << (qubits[1].index + 1))
+        | (!(0xFFFF_FFFF_FFFF_FFFFusize << qubits[2].index));
+    let m2 = (0xFFFF_FFFF_FFFF_FFFFusize << (qubits[0].index + 1))
+        | (!(0xFFFF_FFFF_FFFF_FFFFusize << qubits[1].index));
     let l = !(0xFFFF_FFFF_FFFF_FFFFusize << qubits[0].index);
     (u, m1, m2, l)
 }
@@ -54,6 +56,32 @@ fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize)
     let index_zero = ((index << 1) & upper_mask) | (index & lower_mask);
     let index_one = index_zero | (1usize << qubit.index);
     (index_zero, index_one)
+}
+
+fn mask_vec(qubits: &mut [&Qubit]) -> Vec<usize> {
+    qubits.sort_by(|a, b| a.index.cmp(&b.index));
+    let mut res = vec![0; qubits.len() + 1];
+
+    res[0] = 0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - 1].index + 1);
+
+    for i in 1..qubits.len() {
+        res[i] = (0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - i].index + 1))
+            | !(0xFFFF_FFFF_FFFF_FFFFusize << (qubits[qubits.len() - i + 1].index));
+    }
+    res
+}
+
+fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], dim: usize) -> Vec<usize> {
+    let ims = (0..dim + 1)
+        .map(|s| (index << (dim - s)) & mask[s])
+        .collect::<Vec<_>>();
+    (0..1 << dim)
+        .map(|i| {
+            (0..dim).fold(0, |acc, j| {
+                acc | ims[j] | ((i >> (dim - 1 - j) & 0b1) << qubits[j].index)
+            }) | ims[dim]
+        })
+        .collect()
 }
 
 #[inline]
@@ -154,7 +182,7 @@ impl DoubleGateApplicator for QuantumSimulator {
 
 impl TripleGateApplicator for QuantumSimulator {
     fn apply_triple(&mut self, gate: &TripleGate, qubit1: &Qubit, qubit2: &Qubit, qubit3: &Qubit) {
-        let masks = triple_mask_tuple(&mut [qubit1, qubit2, qubit3]);
+        let masks = triple_mask_tuple([qubit1, qubit2, qubit3]);
         for i in 0..(self.states.len() >> 3) {
             let indices = triple_indices_vec(i, qubit1, qubit2, qubit3, masks);
             let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
