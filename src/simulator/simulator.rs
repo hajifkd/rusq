@@ -38,7 +38,7 @@ fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize)
 impl QuantumMachine for QuantumSimulator {
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
         if self.dimension == 1 {
-            if self.states[0].norm_sqr() < rand::random::<f64>() {
+            if self.states[0].norm_sqr() > rand::random::<f64>() {
                 self.states[0] = Complex::new(1., 0.);
                 self.states[1] = Complex::new(0., 1.);
                 MeasuredResult::Zero
@@ -53,7 +53,7 @@ impl QuantumMachine for QuantumSimulator {
                 .map(|i| self.states[index_pair(i, qubit, upper_mask, lower_mask).0].norm_sqr())
                 .sum();
 
-            if zero_norm_sqr < rand::random::<f64>() {
+            if zero_norm_sqr > rand::random::<f64>() {
                 let norm = zero_norm_sqr.sqrt();
                 for i in 0..(self.states.len() >> 1) {
                     let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);

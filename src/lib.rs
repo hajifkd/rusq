@@ -7,13 +7,15 @@ extern crate rand;
 
 pub mod simulator;
 pub mod gates;
+pub mod prelude;
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum MeasuredResult {
     Zero,
     One,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Qubit {
     pub index: usize,
 }
