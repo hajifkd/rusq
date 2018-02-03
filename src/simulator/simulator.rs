@@ -3,6 +3,7 @@ use rand;
 use {MeasuredResult, QuantumMachine, Qubit};
 use gates::single::{SingleGate, SingleGateApplicator};
 use gates::double::{DoubleGate, DoubleGateApplicator};
+use gates::triple::{TripleGate, TripleGateApplicator};
 use ndarray::prelude::arr1;
 
 pub struct QuantumSimulator {
@@ -39,6 +40,15 @@ fn double_mask_tuple(qubit1: &Qubit, qubit2: &Qubit) -> (usize, usize, usize) {
     }
 }
 
+fn triple_mask_tuple(qubits: &mut [&Qubit; 3]) -> (usize, usize, usize, usize) {
+    qubits.sort_by(|a, b| a.index.cmp(&b.index));
+    let u = 0xFFFF_FFFF_FFFF_FFFFusize << (qubits[2].index + 1);
+    let m1 = ((0xFFFF_FFFF_FFFF_FFFFusize << (qubits[1].index + 2)) | (!u)) >> 1;
+    let m2 = ((0xFFFF_FFFF_FFFF_FFFFusize << (qubits[0].index + 2)) | (!u) | (!m1)) >> 1;
+    let l = !(0xFFFF_FFFF_FFFF_FFFFusize << qubits[0].index);
+    (u, m1, m2, l)
+}
+
 #[inline]
 fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize) -> (usize, usize) {
     let index_zero = ((index << 1) & upper_mask) | (index & lower_mask);
@@ -60,6 +70,27 @@ fn double_indices_vec(
     let lower = index & lower_mask;
     (0..4)
         .map(|i| upper | ((i >> 1) << qubit1.index) | middle | ((i & 0b01) << qubit2.index) | lower)
+        .collect()
+}
+
+#[inline]
+fn triple_indices_vec(
+    index: usize,
+    qubit1: &Qubit,
+    qubit2: &Qubit,
+    qubit3: &Qubit,
+    masks: (usize, usize, usize, usize),
+) -> Vec<usize> {
+    let (u, m1, m2, l) = masks;
+    let u = (index << 3) & u;
+    let m1 = (index << 2) & m1;
+    let m2 = (index << 1) & m2;
+    let l = index & l;
+    (0..4)
+        .map(|i| {
+            u | ((i >> 2) << qubit1.index) | m1 | (((i & 0b10) >> 1) << qubit2.index) | m2
+                | ((i & 0b01) << qubit3.index) | l
+        })
         .collect()
 }
 
@@ -112,6 +143,20 @@ impl DoubleGateApplicator for QuantumSimulator {
         for i in 0..(self.states.len() >> 2) {
             let indices =
                 double_indices_vec(i, qubit1, qubit2, upper_mask, middle_mask, lower_mask);
+            let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
+            let new_values = gate.matrix.dot(&arr1(&values));
+            for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
+                self.states[i] = nv;
+            }
+        }
+    }
+}
+
+impl TripleGateApplicator for QuantumSimulator {
+    fn apply_triple(&mut self, gate: &TripleGate, qubit1: &Qubit, qubit2: &Qubit, qubit3: &Qubit) {
+        let masks = triple_mask_tuple(&mut [qubit1, qubit2, qubit3]);
+        for i in 0..(self.states.len() >> 3) {
+            let indices = triple_indices_vec(i, qubit1, qubit2, qubit3, masks);
             let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
             let new_values = gate.matrix.dot(&arr1(&values));
             for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
