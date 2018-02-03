@@ -2,84 +2,74 @@ use num::complex::Complex;
 use rand;
 use {MeasuredResult, QuantumMachine, Qubit};
 use gates::{SingleGate, SingleGateApplicator};
-use std::cell::Cell;
-
-#[derive(Debug, PartialEq, Eq, Clone)]
-enum Eigenstate {
-    Zero,
-    One,
-}
-
-struct QuantumState {
-    coeff: Cell<Complex<f64>>,
-    vector: Vec<Eigenstate>,
-}
-
-impl QuantumState {
-    fn norm_sqr(&self) -> f64 {
-        self.coeff.get().norm_sqr()
-    }
-
-    fn is_orthogonal(&self, qubit: &Qubit, direction: Eigenstate) -> bool {
-        self.vector[qubit.index] == direction
-    }
-
-    fn encode(&self, absent: &Qubit) -> usize {
-        self.vector.iter().enumerate().fold(0usize, |acc, (i, x)| {
-            if i == absent.index {
-                acc
-            } else {
-                (acc << 1) + if *x == Eigenstate::Zero { 0 } else { 1 }
-            }
-        })
-    }
-}
+use ndarray::prelude::*;
 
 pub struct QuantumSimulator {
     dimension: usize,
-    states: Vec<QuantumState>,
+    states: Vec<Complex<f64>>,
 }
 
 impl QuantumSimulator {
     pub fn new(n: usize) -> QuantumSimulator {
-        let state = QuantumState {
-            coeff: Cell::new(Complex::new(1., 0.)),
-            vector: vec![Eigenstate::Zero; n],
-        };
+        let mut states = vec![Complex::new(0., 0.); 1 << (n - 1)];
+        states[0] = Complex::new(1., 0.);
 
         QuantumSimulator {
             dimension: n,
-            states: vec![state],
-        }
-    }
-
-    fn normalize(&mut self, n: f64) {
-        for state in self.states.iter_mut() {
-            (*state).coeff.set((*state).coeff.get().unscale(n));
+            states: states,
         }
     }
 }
 
+#[inline]
+fn mask_pair(qubit: &Qubit) -> (usize, usize) {
+    let upper_mask: usize = (0xFFFF_FFFF_FFFF_FFFFu64 << (qubit.index + 1)) as _;
+    let lower_mask: usize = (!upper_mask) >> 1;
+    (upper_mask, lower_mask)
+}
+
+#[inline]
+fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize) -> (usize, usize) {
+    let index_zero = (index & upper_mask) | (index & lower_mask);
+    let index_one = index_zero | (1usize << qubit.index);
+    (index_zero, index_one)
+}
+
 impl QuantumMachine for QuantumSimulator {
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
-        let prob0: f64 = self.states
-            .iter()
-            .filter(|&x| x.is_orthogonal(qubit, Eigenstate::Zero))
-            .map(|x| x.norm_sqr())
-            .sum();
-
-        if prob0 < rand::random::<f64>() {
-            self.states
-                .retain(|x| x.is_orthogonal(qubit, Eigenstate::Zero));
-            self.normalize(prob0.sqrt());
-
-            MeasuredResult::Zero
+        if self.dimension == 1 {
+            if self.states[0].norm_sqr() < rand::random::<f64>() {
+                self.states[0] = Complex::new(1., 0.);
+                self.states[1] = Complex::new(0., 1.);
+                MeasuredResult::Zero
+            } else {
+                self.states[1] = Complex::new(1., 0.);
+                self.states[0] = Complex::new(0., 1.);
+                MeasuredResult::One
+            }
         } else {
-            self.states
-                .retain(|x| x.is_orthogonal(qubit, Eigenstate::One));
-            self.normalize((1. - prob0).sqrt());
+            let (upper_mask, lower_mask) = mask_pair(qubit);
+            let zero_norm_sqr: f64 = (0..(self.states.len() >> 1))
+                .map(|i| self.states[index_pair(i, qubit, upper_mask, lower_mask).0].norm_sqr())
+                .sum();
 
-            MeasuredResult::One
+            if zero_norm_sqr < rand::random::<f64>() {
+                let norm = zero_norm_sqr.sqrt();
+                for i in 0..(self.states.len() >> 1) {
+                    let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
+                    self.states[iz] /= norm;
+                    self.states[io] = Complex::new(0., 0.);
+                }
+                MeasuredResult::Zero
+            } else {
+                let norm = (1. - zero_norm_sqr).sqrt();
+                for i in 0..(self.states.len() >> 1) {
+                    let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
+                    self.states[io] /= norm;
+                    self.states[iz] = Complex::new(0., 0.);
+                }
+                MeasuredResult::One
+            }
         }
     }
 
@@ -90,34 +80,15 @@ impl QuantumMachine for QuantumSimulator {
 
 impl SingleGateApplicator for QuantumSimulator {
     fn apply_single(&mut self, gate: &SingleGate, qubit: &Qubit) {
-        let mut index_table = vec![-1isize; 1 << (self.dimension - 1)];
-
-        for (i, state) in self.states.iter().enumerate() {
-            let code = state.encode(qubit);
-            if index_table[code] >= 0 {
-                let v = if state.vector[qubit.index] == Eigenstate::Zero {
-                    array![
-                        [state.coeff.get()],
-                        [self.states[index_table[code] as usize].coeff.get()],
-                    ]
-                } else {
-                    array![
-                        [self.states[index_table[code] as usize].coeff.get()],
-                        [state.coeff.get()],
-                    ]
-                };
-
-                let u = gate.matrix.dot(&v);
-
-                if state.vector[qubit.index] == Eigenstate::Zero {
-                    state.coeff.set(u[[0, 0]]);
-                    self.states[index_table[code] as usize].coeff.set(u[[1, 0]]);
-                } else {
-                    state.coeff.set(u[[1, 0]]);
-                    self.states[index_table[code] as usize].coeff.set(u[[0, 0]]);
-                };
-            } else {
-                index_table[code] = i as isize;
+        if self.dimension == 1 {
+            self.states = gate.matrix.dot(&arr1(&self.states)).to_vec();
+        } else {
+            let (upper_mask, lower_mask) = mask_pair(qubit);
+            for i in 0..(self.states.len() >> 1) {
+                let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
+                let new_value = gate.matrix.dot(&array![self.states[iz], self.states[io]]);
+                self.states[iz] = new_value[0];
+                self.states[io] = new_value[1];
             }
         }
     }
