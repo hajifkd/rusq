@@ -135,4 +135,37 @@ impl TripleGateApplicator for QuantumSimulator {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+    use super::*;
+    use Qubit;
+
+    #[test]
+    fn test_mask_pair() {
+        let qubit = Qubit { index: 12 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        assert_eq!(
+            upper_mask,
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11100000_00000000usize
+        );
+
+        assert_eq!(
+            lower_mask,
+            0b00000000_00000000_00000000_00000000_00000000_00000000_00001111_11111111usize
+        )
+    }
+
+    #[test]
+    fn test_index_pair() {
+        let qubit = Qubit { index: 13 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        let (iz, io) = index_pair(
+            0b01011101_11111011_11011111usize,
+            &qubit,
+            upper_mask,
+            lower_mask,
+        );
+        assert_eq!(iz, 0b10111011_11011011_11011111usize);
+
+        assert_eq!(io, 0b10111011_11111011_11011111usize);
+    }
+}
