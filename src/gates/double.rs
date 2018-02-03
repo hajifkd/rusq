@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 use num::complex::Complex;
 use Qubit;
 
+#[derive(Debug)]
 pub struct DoubleGate {
     pub matrix: Array2<Complex<f64>>,
 }
@@ -10,7 +11,7 @@ macro_rules! gen_gates {
     ($mat: ident) => {
         #[allow(non_snake_case)]
         fn $mat(&mut self, qubit1: &Qubit, qubit2: &Qubit) {
-            self.apply_double(&$mat, qubit1, qubit2);
+            self.apply_double(&$mat.matrix, qubit1, qubit2);
         }
     };
 
@@ -20,7 +21,7 @@ macro_rules! gen_gates {
 }
 
 pub trait DoubleGateApplicator {
-    fn apply_double(&mut self, gate: &DoubleGate, qubit1: &Qubit, qubit2: &Qubit);
+    fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit);
 
     gen_gates!(CNOT);
 }

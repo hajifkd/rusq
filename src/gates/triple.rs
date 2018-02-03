@@ -2,6 +2,7 @@ use ndarray::prelude::*;
 use num::complex::Complex;
 use Qubit;
 
+#[derive(Debug)]
 pub struct TripleGate {
     pub matrix: Array2<Complex<f64>>,
 }
@@ -10,7 +11,7 @@ macro_rules! gen_gates {
     ($mat: ident) => {
         #[allow(non_snake_case)]
         fn $mat(&mut self, qubit1: &Qubit, qubit2: &Qubit, qubit3: &Qubit) {
-            self.apply_triple(&$mat, qubit1, qubit2, qubit3);
+            self.apply_triple(&$mat.matrix, qubit1, qubit2, qubit3);
         }
     };
 
@@ -20,7 +21,13 @@ macro_rules! gen_gates {
 }
 
 pub trait TripleGateApplicator {
-    fn apply_triple(&mut self, gate: &TripleGate, qubit1: &Qubit, qubit2: &Qubit, qubit3: &Qubit);
+    fn apply_triple(
+        &mut self,
+        matrix: &Array2<Complex<f64>>,
+        qubit1: &Qubit,
+        qubit2: &Qubit,
+        qubit3: &Qubit,
+    );
 
     gen_gates!(CCNOT);
 }

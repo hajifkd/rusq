@@ -2,15 +2,16 @@ use ndarray::prelude::*;
 use num::complex::Complex;
 use Qubit;
 
+#[derive(Debug)]
 pub struct SingleGate {
-    pub matrix: Array2<Complex<f64>>,
+    matrix: Array2<Complex<f64>>,
 }
 
 macro_rules! gen_gates {
     ($mat: ident) => {
         #[allow(non_snake_case)]
         fn $mat(&mut self, qubit: &Qubit) {
-            self.apply_single(&$mat, qubit);
+            self.apply_single(&$mat.matrix, qubit);
         }
     };
 
@@ -20,7 +21,7 @@ macro_rules! gen_gates {
 }
 
 pub trait SingleGateApplicator {
-    fn apply_single(&mut self, gate: &SingleGate, qubit: &Qubit);
+    fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit);
 
     gen_gates!(H, X, Y, Z, ID);
 }
