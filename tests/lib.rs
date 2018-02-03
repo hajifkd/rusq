@@ -46,3 +46,16 @@ fn operate_h() {
     // 5 sigma - it is highly likely to be true.
     assert!(count_zero > 4500 && 5500 > count_zero);
 }
+
+#[test]
+fn operate_cnot() {
+    let mut sim = rusq::simulator::QuantumSimulator::new(2);
+    let qubits = sim.get_qubits();
+
+    sim.X(&qubits[0]);
+    assert_eq!(sim.measure(&qubits[0]), MeasuredResult::One);
+
+    assert_eq!(sim.measure(&qubits[1]), MeasuredResult::Zero);
+    sim.CNOT(&qubits[0], &qubits[1]);
+    assert_eq!(sim.measure(&qubits[1]), MeasuredResult::One);
+}

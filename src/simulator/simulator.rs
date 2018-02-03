@@ -65,39 +65,27 @@ fn double_indices_vec(
 
 impl QuantumMachine for QuantumSimulator {
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
-        if self.dimension == 1 {
-            if self.states[0].norm_sqr() > rand::random::<f64>() {
-                self.states[0] = Complex::new(1., 0.);
-                self.states[1] = Complex::new(0., 0.);
-                MeasuredResult::Zero
-            } else {
-                self.states[1] = Complex::new(1., 0.);
-                self.states[0] = Complex::new(0., 0.);
-                MeasuredResult::One
-            }
-        } else {
-            let (upper_mask, lower_mask) = mask_pair(qubit);
-            let zero_norm_sqr: f64 = (0..(self.states.len() >> 1))
-                .map(|i| self.states[index_pair(i, qubit, upper_mask, lower_mask).0].norm_sqr())
-                .sum();
+        let (upper_mask, lower_mask) = mask_pair(qubit);
+        let zero_norm_sqr: f64 = (0..(self.states.len() >> 1))
+            .map(|i| self.states[index_pair(i, qubit, upper_mask, lower_mask).0].norm_sqr())
+            .sum();
 
-            if zero_norm_sqr > rand::random::<f64>() {
-                let norm = zero_norm_sqr.sqrt();
-                for i in 0..(self.states.len() >> 1) {
-                    let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
-                    self.states[iz] /= norm;
-                    self.states[io] = Complex::new(0., 0.);
-                }
-                MeasuredResult::Zero
-            } else {
-                let norm = (1. - zero_norm_sqr).sqrt();
-                for i in 0..(self.states.len() >> 1) {
-                    let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
-                    self.states[io] /= norm;
-                    self.states[iz] = Complex::new(0., 0.);
-                }
-                MeasuredResult::One
+        if zero_norm_sqr > rand::random::<f64>() {
+            let norm = zero_norm_sqr.sqrt();
+            for i in 0..(self.states.len() >> 1) {
+                let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
+                self.states[iz] /= norm;
+                self.states[io] = Complex::new(0., 0.);
             }
+            MeasuredResult::Zero
+        } else {
+            let norm = (1. - zero_norm_sqr).sqrt();
+            for i in 0..(self.states.len() >> 1) {
+                let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
+                self.states[io] /= norm;
+                self.states[iz] = Complex::new(0., 0.);
+            }
+            MeasuredResult::One
         }
     }
 
@@ -108,34 +96,26 @@ impl QuantumMachine for QuantumSimulator {
 
 impl SingleGateApplicator for QuantumSimulator {
     fn apply_single(&mut self, gate: &SingleGate, qubit: &Qubit) {
-        if self.dimension == 1 {
-            self.states = gate.matrix.dot(&arr1(&self.states)).to_vec();
-        } else {
-            let (upper_mask, lower_mask) = mask_pair(qubit);
-            for i in 0..(self.states.len() >> 1) {
-                let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
-                let new_value = gate.matrix.dot(&array![self.states[iz], self.states[io]]);
-                self.states[iz] = new_value[0];
-                self.states[io] = new_value[1];
-            }
+        let (upper_mask, lower_mask) = mask_pair(qubit);
+        for i in 0..(self.states.len() >> 1) {
+            let (iz, io) = index_pair(i, qubit, upper_mask, lower_mask);
+            let new_value = gate.matrix.dot(&array![self.states[iz], self.states[io]]);
+            self.states[iz] = new_value[0];
+            self.states[io] = new_value[1];
         }
     }
 }
 
 impl DoubleGateApplicator for QuantumSimulator {
     fn apply_double(&mut self, gate: &DoubleGate, qubit1: &Qubit, qubit2: &Qubit) {
-        if self.dimension == 2 {
-            self.states = gate.matrix.dot(&arr1(&self.states)).to_vec();
-        } else {
-            let (upper_mask, middle_mask, lower_mask) = double_mask_tuple(qubit1, qubit2);
-            for i in 0..(self.states.len() >> 2) {
-                let indices =
-                    double_indices_vec(i, qubit1, qubit2, upper_mask, middle_mask, lower_mask);
-                let values = indices.iter().map(|i| self.states[*i]).collect::<Vec<_>>();
-                let new_value = gate.matrix.dot(&arr1(&values));
-                for (i, nv) in indices.iter().zip(new_value.to_vec()) {
-                    self.states[*i] = nv;
-                }
+        let (upper_mask, middle_mask, lower_mask) = double_mask_tuple(qubit1, qubit2);
+        for i in 0..(self.states.len() >> 2) {
+            let indices =
+                double_indices_vec(i, qubit1, qubit2, upper_mask, middle_mask, lower_mask);
+            let values = indices.iter().map(|i| self.states[*i]).collect::<Vec<_>>();
+            let new_values = gate.matrix.dot(&arr1(&values));
+            for (i, nv) in indices.iter().zip(new_values.to_vec()) {
+                self.states[*i] = nv;
             }
         }
     }
