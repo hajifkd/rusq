@@ -40,11 +40,11 @@ impl QuantumMachine for QuantumSimulator {
         if self.dimension == 1 {
             if self.states[0].norm_sqr() > rand::random::<f64>() {
                 self.states[0] = Complex::new(1., 0.);
-                self.states[1] = Complex::new(0., 1.);
+                self.states[1] = Complex::new(0., 0.);
                 MeasuredResult::Zero
             } else {
                 self.states[1] = Complex::new(1., 0.);
-                self.states[0] = Complex::new(0., 1.);
+                self.states[0] = Complex::new(0., 0.);
                 MeasuredResult::One
             }
         } else {
