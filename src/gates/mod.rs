@@ -2,7 +2,7 @@ use ndarray::prelude::*;
 use num::complex::Complex;
 
 pub struct SingleGate {
-    matrix: Array2<Complex<f64>>,
+    pub matrix: Array2<Complex<f64>>,
 }
 
 pub trait SingleGateApplicator {

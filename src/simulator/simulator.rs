@@ -2,6 +2,7 @@ use num::complex::Complex;
 use rand;
 use {MeasuredResult, QuantumMachine, Qubit};
 use gates::{SingleGate, SingleGateApplicator};
+use std::cell::Cell;
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 enum Eigenstate {
@@ -10,13 +11,13 @@ enum Eigenstate {
 }
 
 struct QuantumState {
-    coeff: Complex<f64>,
+    coeff: Cell<Complex<f64>>,
     vector: Vec<Eigenstate>,
 }
 
 impl QuantumState {
     fn norm_sqr(&self) -> f64 {
-        self.coeff.norm_sqr()
+        self.coeff.get().norm_sqr()
     }
 
     fn is_orthogonal(&self, qubit: &Qubit, direction: Eigenstate) -> bool {
@@ -42,7 +43,7 @@ pub struct QuantumSimulator {
 impl QuantumSimulator {
     pub fn new(n: usize) -> QuantumSimulator {
         let state = QuantumState {
-            coeff: Complex::new(1., 0.),
+            coeff: Cell::new(Complex::new(1., 0.)),
             vector: vec![Eigenstate::Zero; n],
         };
 
@@ -54,7 +55,7 @@ impl QuantumSimulator {
 
     fn normalize(&mut self, n: f64) {
         for state in self.states.iter_mut() {
-            (*state).coeff /= n;
+            (*state).coeff.set((*state).coeff.get().unscale(n));
         }
     }
 }
@@ -91,10 +92,30 @@ impl SingleGateApplicator for QuantumSimulator {
     fn apply_single(&mut self, gate: &SingleGate, qubit: &Qubit) {
         let mut index_table = vec![-1isize; 1 << (self.dimension - 1)];
 
-        for (i, state) in self.states.iter_mut().enumerate() {
+        for (i, state) in self.states.iter().enumerate() {
             let code = state.encode(qubit);
             if index_table[code] >= 0 {
-                //self.states[index_table[code] as usize].coeff = Complex::new(1., 0.);
+                let v = if state.vector[qubit.index] == Eigenstate::Zero {
+                    array![
+                        [state.coeff.get()],
+                        [self.states[index_table[code] as usize].coeff.get()],
+                    ]
+                } else {
+                    array![
+                        [self.states[index_table[code] as usize].coeff.get()],
+                        [state.coeff.get()],
+                    ]
+                };
+
+                let u = gate.matrix.dot(&v);
+
+                if state.vector[qubit.index] == Eigenstate::Zero {
+                    state.coeff.set(u[[0, 0]]);
+                    self.states[index_table[code] as usize].coeff.set(u[[1, 0]]);
+                } else {
+                    state.coeff.set(u[[1, 0]]);
+                    self.states[index_table[code] as usize].coeff.set(u[[0, 0]]);
+                };
             } else {
                 index_table[code] = i as isize;
             }
