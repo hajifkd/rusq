@@ -1,7 +1,8 @@
 use num::complex::Complex;
 use rand;
 use {MeasuredResult, QuantumMachine, Qubit};
-use gates::{SingleGate, SingleGateApplicator};
+use gates::single::{SingleGate, SingleGateApplicator};
+use gates::double::{DoubleGate, DoubleGateApplicator};
 use ndarray::prelude::arr1;
 
 pub struct QuantumSimulator {
@@ -21,11 +22,21 @@ impl QuantumSimulator {
     }
 }
 
-#[inline]
 fn mask_pair(qubit: &Qubit) -> (usize, usize) {
-    let upper_mask: usize = (0xFFFF_FFFF_FFFF_FFFFu64 << (qubit.index + 1)) as _;
-    let lower_mask: usize = (!upper_mask) >> 1;
+    let upper_mask = 0xFFFF_FFFF_FFFF_FFFFusize << (qubit.index + 1);
+    let lower_mask = !(0xFFFF_FFFF_FFFF_FFFFusize << qubit.index);
     (upper_mask, lower_mask)
+}
+
+fn double_mask_tuple(qubit1: &Qubit, qubit2: &Qubit) -> (usize, usize, usize) {
+    if qubit1.index > qubit2.index {
+        double_mask_tuple(qubit2, qubit1)
+    } else {
+        let upper_mask = 0xFFFF_FFFF_FFFF_FFFFusize << (qubit2.index + 1);
+        let middle_mask = ((0xFFFF_FFFF_FFFF_FFFFusize << (qubit1.index + 2)) | (!upper_mask)) >> 1;
+        let lower_mask = !(0xFFFF_FFFF_FFFF_FFFFusize << qubit1.index);
+        (upper_mask, middle_mask, lower_mask)
+    }
 }
 
 #[inline]
@@ -33,6 +44,23 @@ fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize)
     let index_zero = ((index << 1) & upper_mask) | (index & lower_mask);
     let index_one = index_zero | (1usize << qubit.index);
     (index_zero, index_one)
+}
+
+#[inline]
+fn double_indices_vec(
+    index: usize,
+    qubit1: &Qubit,
+    qubit2: &Qubit,
+    upper_mask: usize,
+    middle_mask: usize,
+    lower_mask: usize,
+) -> Vec<usize> {
+    (0..4)
+        .map(|i| {
+            upper_mask | ((i >> 1) << qubit1.index) | middle_mask | ((i & 0b01) << qubit2.index)
+                | lower_mask
+        })
+        .collect()
 }
 
 impl QuantumMachine for QuantumSimulator {
@@ -89,6 +117,25 @@ impl SingleGateApplicator for QuantumSimulator {
                 let new_value = gate.matrix.dot(&array![self.states[iz], self.states[io]]);
                 self.states[iz] = new_value[0];
                 self.states[io] = new_value[1];
+            }
+        }
+    }
+}
+
+impl DoubleGateApplicator for QuantumSimulator {
+    fn apply_double(&mut self, gate: &DoubleGate, qubit1: &Qubit, qubit2: &Qubit) {
+        if self.dimension == 2 {
+            self.states = gate.matrix.dot(&arr1(&self.states)).to_vec();
+        } else {
+            let (upper_mask, middle_mask, lower_mask) = double_mask_tuple(qubit1, qubit2);
+            for i in 0..(self.states.len() >> 2) {
+                let indices =
+                    double_indices_vec(i, qubit1, qubit2, upper_mask, middle_mask, lower_mask);
+                let values = indices.iter().map(|i| self.states[*i]).collect::<Vec<_>>();
+                let new_value = gate.matrix.dot(&arr1(&values));
+                for (i, nv) in indices.iter().zip(new_value.to_vec()) {
+                    self.states[*i] = nv;
+                }
             }
         }
     }
