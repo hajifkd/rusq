@@ -112,10 +112,10 @@ impl DoubleGateApplicator for QuantumSimulator {
         for i in 0..(self.states.len() >> 2) {
             let indices =
                 double_indices_vec(i, qubit1, qubit2, upper_mask, middle_mask, lower_mask);
-            let values = indices.iter().map(|i| self.states[*i]).collect::<Vec<_>>();
+            let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
             let new_values = gate.matrix.dot(&arr1(&values));
-            for (i, nv) in indices.iter().zip(new_values.to_vec()) {
-                self.states[*i] = nv;
+            for (&i, nv) in indices.iter().zip(new_values.to_vec()) {
+                self.states[i] = nv;
             }
         }
     }
