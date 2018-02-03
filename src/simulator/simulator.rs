@@ -55,11 +55,11 @@ fn double_indices_vec(
     middle_mask: usize,
     lower_mask: usize,
 ) -> Vec<usize> {
+    let upper = (index << 2) & upper_mask;
+    let middle = (index << 1) & middle_mask;
+    let lower = index & lower_mask;
     (0..4)
-        .map(|i| {
-            upper_mask | ((i >> 1) << qubit1.index) | middle_mask | ((i & 0b01) << qubit2.index)
-                | lower_mask
-        })
+        .map(|i| upper | ((i >> 1) << qubit1.index) | middle | ((i & 0b01) << qubit2.index) | lower)
         .collect()
 }
 
