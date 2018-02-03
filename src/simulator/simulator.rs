@@ -2,7 +2,7 @@ use num::complex::Complex;
 use rand;
 use {MeasuredResult, QuantumMachine, Qubit};
 use gates::{SingleGate, SingleGateApplicator};
-use ndarray::prelude::*;
+use ndarray::prelude::arr1;
 
 pub struct QuantumSimulator {
     dimension: usize,
@@ -11,7 +11,7 @@ pub struct QuantumSimulator {
 
 impl QuantumSimulator {
     pub fn new(n: usize) -> QuantumSimulator {
-        let mut states = vec![Complex::new(0., 0.); 1 << (n - 1)];
+        let mut states = vec![Complex::new(0., 0.); 1 << n];
         states[0] = Complex::new(1., 0.);
 
         QuantumSimulator {
@@ -30,7 +30,7 @@ fn mask_pair(qubit: &Qubit) -> (usize, usize) {
 
 #[inline]
 fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize) -> (usize, usize) {
-    let index_zero = (index & upper_mask) | (index & lower_mask);
+    let index_zero = ((index << 1) & upper_mask) | (index & lower_mask);
     let index_one = index_zero | (1usize << qubit.index);
     (index_zero, index_one)
 }
@@ -91,5 +91,41 @@ impl SingleGateApplicator for QuantumSimulator {
                 self.states[io] = new_value[1];
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use Qubit;
+
+    #[test]
+    fn test_mask_pair() {
+        let qubit = Qubit { index: 12 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        assert_eq!(
+            upper_mask,
+            0b11111111_11111111_11111111_11111111_11111111_11111111_11100000_00000000usize
+        );
+
+        assert_eq!(
+            lower_mask,
+            0b00000000_00000000_00000000_00000000_00000000_00000000_00001111_11111111usize
+        )
+    }
+
+    #[test]
+    fn test_index_pair() {
+        let qubit = Qubit { index: 13 };
+        let (upper_mask, lower_mask) = mask_pair(&qubit);
+        let (iz, io) = index_pair(
+            0b01011101_11111011_11011111usize,
+            &qubit,
+            upper_mask,
+            lower_mask,
+        );
+        assert_eq!(iz, 0b10111011_11011011_11011111usize);
+
+        assert_eq!(io, 0b10111011_11111011_11011111usize);
     }
 }
