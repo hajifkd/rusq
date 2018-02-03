@@ -89,3 +89,38 @@ fn epr_pair() {
         assert_eq!(sim.measure(&qubits[0]), sim.measure(&qubits[1]));
     }
 }
+
+#[test]
+fn operate_ccnot() {
+    let mut sim = rusq::simulator::QuantumSimulator::new(3);
+    let qubits = sim.get_qubits();
+
+    set(&mut sim, &qubits[0], MeasuredResult::One);
+    assert_eq!(sim.measure(&qubits[0]), MeasuredResult::One);
+
+    set(&mut sim, &qubits[1], MeasuredResult::One);
+    assert_eq!(sim.measure(&qubits[1]), MeasuredResult::One);
+
+    set(&mut sim, &qubits[2], MeasuredResult::Zero);
+    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
+    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
+    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::One);
+
+    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
+    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
+
+    set(&mut sim, &qubits[0], MeasuredResult::One);
+    set(&mut sim, &qubits[1], MeasuredResult::Zero);
+    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
+    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
+
+    set(&mut sim, &qubits[0], MeasuredResult::Zero);
+    set(&mut sim, &qubits[1], MeasuredResult::One);
+    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
+    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
+
+    set(&mut sim, &qubits[0], MeasuredResult::Zero);
+    set(&mut sim, &qubits[1], MeasuredResult::Zero);
+    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
+    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
+}

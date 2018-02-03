@@ -5,3 +5,4 @@ pub use Qubit;
 
 pub use gates::single::SingleGateApplicator;
 pub use gates::double::DoubleGateApplicator;
+pub use gates::triple::TripleGateApplicator;
