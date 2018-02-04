@@ -67,14 +67,14 @@ fn mask_vec(qubits: &mut [&Qubit]) -> Vec<usize> {
 }
 
 fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], dim: usize) -> Vec<usize> {
-    let ims = (0..dim + 1)
+    let imask = (0..dim + 1)
         .map(|s| (index << (dim - s)) & mask[s])
-        .collect::<Vec<_>>();
+        .fold(0, |acc, m| acc | m);
     (0..1 << dim)
         .map(|i| {
-            (0..dim).fold(0, |acc, j| {
-                acc | ims[j] | ((i >> (dim - 1 - j) & 0b1) << qubits[j].index)
-            }) | ims[dim]
+            (0..dim).fold(imask, |acc, j| {
+                acc | ((i >> (dim - 1 - j) & 0b1) << qubits[j].index)
+            })
         })
         .collect()
 }
