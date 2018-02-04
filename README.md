@@ -9,6 +9,12 @@ Rusq is a library to simulate a gate-type quantum computer written purely in Rus
 
 The Rusq design is highly inspired by [Q#](https://docs.microsoft.com/en-us/quantum/). Basically, only "physically safe" operation is implemented - no non-physical information like the amplitude of a wavefunction can be obtained by default.
 
+### Feature
+
+* Measurement and projection
+* Basic quantum gates
+    * $X, Y, Z$, Hadamard, identity, CNOT, CCNOT
+
 ## How to use
 
 First, add the following to `Cargo.toml`
@@ -18,11 +24,11 @@ First, add the following to `Cargo.toml`
 rusq = { version = "*", git = "https://github.com/hajifkd/rusq.git" }
 ```
 
-Then.
+For example codes, check out the following section.
 
 ## Examples
 
-For instance, you can make EPR pair:
+For instance, you can make EPR pair like this:
 
 ```rust
 extern crate rusq;
@@ -53,3 +59,7 @@ fn main() {
 ```
 
 For other kinds of examples, check [tests](https://github.com/hajifkd/rusq/tree/master/tests) directory. Pull requests to implement another examples of quantum computation is welcome.
+
+## License
+
+MIT
