@@ -1,3 +1,7 @@
+///
+/// A main module for a quantum machine simulator
+///
+
 use num::complex::Complex;
 use rand;
 use {MeasuredResult, QuantumMachine, Qubit};
@@ -6,12 +10,33 @@ use gates::double::DoubleGateApplicator;
 use gates::triple::TripleGateApplicator;
 use ndarray::prelude::*;
 
+///
+/// A simulator for a quantum computer
+///
+/// This type represents a quantum computer.
+///
+/// Memory consumption scales 2^n with a given qubits number n.
+/// Thus, usually machines up to around 30 qubits can be simulated
+/// although internal implementation is 64 bits.
+///
 pub struct QuantumSimulator {
     dimension: usize,
     states: Vec<Complex<f64>>,
 }
 
 impl QuantumSimulator {
+    ///
+    /// Creates a new instance with a given number of qubits.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use rusq::prelude::*;
+    ///
+    /// // A simulator with 3 qubits.
+    /// let sim = QuantumSimulator::new(3);
+    /// ```
+    ///
     pub fn new(n: usize) -> QuantumSimulator {
         let mut states = vec![Complex::new(0., 0.); 1 << n];
         states[0] = Complex::new(1., 0.);
@@ -80,6 +105,11 @@ fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], dim: usize) -> V
 }
 
 impl QuantumMachine for QuantumSimulator {
+    ///
+    /// Measures the given qubit.
+    ///
+    /// Due to the projection postulate, the measured qubit will be projected onto the states
+    /// corresponding the measured result.
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
         let (upper_mask, lower_mask) = mask_pair(qubit);
         let zero_norm_sqr: f64 = (0..(self.states.len() >> 1))
