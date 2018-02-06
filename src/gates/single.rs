@@ -1,3 +1,10 @@
+//!
+//! A module for single quantum gates.
+//!
+//! The gates in this modules represents an operation for a single qubit.
+//! Currently, sigma matrices, Hadamard gates and identity operator are supported.
+//!
+
 use ndarray::prelude::*;
 use num::complex::Complex;
 use Qubit;
@@ -20,7 +27,13 @@ macro_rules! gen_gates {
     };
 }
 
+///
+/// An trait for the types which accept operations for a single qubit.
+///
 pub trait SingleGateApplicator {
+    ///
+    /// An operation for the given unitary matrix `matrix` to `qubit`
+    ///
     fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit);
 
     gen_gates!(H, X, Y, Z, ID);

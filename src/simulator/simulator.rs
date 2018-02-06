@@ -16,8 +16,33 @@ use ndarray::prelude::*;
 /// This type represents a quantum computer.
 ///
 /// Memory consumption scales 2^n with a given qubits number n.
-/// Thus, usually machines up to around 30 qubits can be simulated
-/// although internal implementation is 64 bits.
+/// Thus, usually quantum machines up to around 30 qubits can be simulated
+/// although internal implementation is `usize`.
+///
+/// # Examples
+///
+/// An example to set the given qubit state to the desired one;
+///
+/// ```
+/// use rusq::prelude::*;
+///
+/// fn set(sim: &mut QuantumSimulator, qubit: &Qubit, r: MeasuredResult) {
+///     if sim.measure(qubit) != r {
+///         sim.X(qubit);
+///     }
+/// }
+///
+/// let mut sim = QuantumSimulator::new(1);
+/// let qubit = &sim.get_qubits()[0];
+/// set(&mut sim, qubit, MeasuredResult::Zero);
+///
+/// assert_eq!(sim.measure(qubit), MeasuredResult::Zero);
+/// ```
+///
+/// As is discussed in [`new` method](#method.new), the initial values of the qubits are not
+/// definite (although in the code one can find some value). Thus, one needs to initialize
+/// qubits in this way. This behavior is because not the wavefunction itself but the ray corresponds
+/// to the physical state.
 ///
 pub struct QuantumSimulator {
     dimension: usize,
@@ -27,6 +52,8 @@ pub struct QuantumSimulator {
 impl QuantumSimulator {
     ///
     /// Creates a new instance with a given number of qubits.
+    /// Note that the initial states of the qubits are not guaranteed
+    /// to be a definite value.
     ///
     /// # Examples
     ///
@@ -105,11 +132,6 @@ fn indices_vec(index: usize, qubits: &[&Qubit], mask: &[usize], dim: usize) -> V
 }
 
 impl QuantumMachine for QuantumSimulator {
-    ///
-    /// Measures the given qubit.
-    ///
-    /// Due to the projection postulate, the measured qubit will be projected onto the states
-    /// corresponding the measured result.
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult {
         let (upper_mask, lower_mask) = mask_pair(qubit);
         let zero_norm_sqr: f64 = (0..(self.states.len() >> 1))

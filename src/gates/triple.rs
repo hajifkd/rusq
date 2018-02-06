@@ -1,3 +1,10 @@
+//!
+//! A module for triple quantum gates.
+//!
+//! The gates in this modules represents an operation for three qubits.
+//! Currently, CCNOT are supported.
+//!
+
 use ndarray::prelude::*;
 use num::complex::Complex;
 use Qubit;
@@ -20,7 +27,13 @@ macro_rules! gen_gates {
     };
 }
 
+///
+/// An trait for the types which accept operations for theree qubits.
+///
 pub trait TripleGateApplicator {
+    ///
+    /// An operation for the given unitary matrix `matrix` to `qubit1`, `qubit2` and `qubit3`
+    ///
     fn apply_triple(
         &mut self,
         matrix: &Array2<Complex<f64>>,

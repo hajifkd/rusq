@@ -1,3 +1,10 @@
+//!
+//! A module for double quantum gates.
+//!
+//! The gates in this modules represents an operation for two qubits.
+//! Currently, CNOT and SWAP are supported.
+//!
+
 use ndarray::prelude::*;
 use num::complex::Complex;
 use Qubit;
@@ -20,7 +27,13 @@ macro_rules! gen_gates {
     };
 }
 
+///
+/// An trait for the types which accept operations for two qubits.
+///
 pub trait DoubleGateApplicator {
+    ///
+    /// An operation for the given unitary matrix `matrix` to `qubit1` and `qubit2`
+    ///
     fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit);
 
     gen_gates!(CNOT, SWAP);

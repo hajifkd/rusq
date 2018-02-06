@@ -1,3 +1,7 @@
+//!
+//! A module meant to be glob imported when using Rusq.
+//!
+
 pub use simulator::QuantumSimulator;
 pub use QuantumMachine;
 pub use MeasuredResult;
