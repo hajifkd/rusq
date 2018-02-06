@@ -23,7 +23,7 @@ macro_rules! gen_gates {
 pub trait DoubleGateApplicator {
     fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit);
 
-    gen_gates!(CNOT);
+    gen_gates!(CNOT, SWAP);
 }
 
 lazy_static! {
@@ -34,6 +34,17 @@ lazy_static! {
                 [Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
                 [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.),],
                 [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.),],
+            ],
+        }
+    };
+
+    pub static ref SWAP: DoubleGate = {
+        DoubleGate {
+            matrix: array![
+                [Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
+                [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.),],
+                [Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
+                [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.),],
             ],
         }
     };
