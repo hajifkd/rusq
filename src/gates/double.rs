@@ -27,6 +27,15 @@ macro_rules! gen_gates {
     };
 }
 
+macro_rules! carray {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new($x, 0.)),*]),*
+        ]
+    }};
+}
+
 ///
 /// An trait for the types which accept operations for two qubits.
 ///
@@ -42,22 +51,22 @@ pub trait DoubleGateApplicator {
 lazy_static! {
     pub static ref CNOT: DoubleGate = {
         DoubleGate {
-            matrix: array![
-                [Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
-                [Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
-                [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.),],
-                [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.),],
+            matrix: carray![
+                [1., 0., 0., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 0., 1.],
+                [0., 0., 1., 0.]
             ],
         }
     };
 
     pub static ref SWAP: DoubleGate = {
         DoubleGate {
-            matrix: array![
-                [Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
-                [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.),],
-                [Complex::new(0., 0.), Complex::new(1., 0.), Complex::new(0., 0.), Complex::new(0., 0.),],
-                [Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(0., 0.), Complex::new(1., 0.),],
+            matrix: carray![
+                [1., 0., 0., 0.],
+                [0., 0., 1., 0.],
+                [0., 1., 0., 0.],
+                [0., 0., 0., 1.]
             ],
         }
     };

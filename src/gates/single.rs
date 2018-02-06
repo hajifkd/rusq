@@ -27,6 +27,24 @@ macro_rules! gen_gates {
     };
 }
 
+macro_rules! carray {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new($x, 0.)),*]),*
+        ]
+    }};
+}
+
+macro_rules! carray_i {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new(0., $x)),*]),*
+        ]
+    }};
+}
+
 ///
 /// An trait for the types which accept operations for a single qubit.
 ///
@@ -42,45 +60,45 @@ pub trait SingleGateApplicator {
 lazy_static! {
     pub static ref H: SingleGate = {
         SingleGate {
-            matrix: array![
-                [Complex::new(1., 0.), Complex::new(-1., 0.)],
-                [Complex::new(1., 0.), Complex::new(1., 0.)]
+            matrix: carray![
+                [1., -1.],
+                [1.,  1.]
             ] / (2f64).sqrt(),
         }
     };
 
     pub static ref X: SingleGate = {
         SingleGate {
-            matrix: array![
-                [Complex::new(0., 0.), Complex::new(1., 0.)],
-                [Complex::new(1., 0.), Complex::new(0., 0.)]
+            matrix: carray![
+                [0., 1.],
+                [1., 0.]
             ],
         }
     };
 
     pub static ref Y: SingleGate = {
         SingleGate {
-            matrix: array![
-                [Complex::new(0., 0.), Complex::new(0., 1.)],
-                [Complex::new(0., -1.), Complex::new(0., 0.)]
+            matrix: carray_i![
+                [0.,  1.],
+                [-1., 0.]
             ],
         }
     };
 
     pub static ref Z: SingleGate = {
         SingleGate {
-            matrix: array![
-                [Complex::new(1., 0.), Complex::new(0., 0.)],
-                [Complex::new(0., 0.), Complex::new(-1., 0.)]
+            matrix: carray![
+                [1.,  0.],
+                [0., -1.]
             ],
         }
     };
 
     pub static ref ID: SingleGate = {
         SingleGate {
-            matrix: array![
-                [Complex::new(1., 0.), Complex::new(0., 0.)],
-                [Complex::new(0., 0.), Complex::new(1., 0.)]
+            matrix: carray![
+                [1., 0.],
+                [0., 1.]
             ],
         }
     };

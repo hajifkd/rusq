@@ -27,6 +27,15 @@ macro_rules! gen_gates {
     };
 }
 
+macro_rules! carray {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new($x, 0.)),*]),*
+        ]
+    }};
+}
+
 ///
 /// An trait for the types which accept operations for theree qubits.
 ///
@@ -47,16 +56,17 @@ pub trait TripleGateApplicator {
 
 lazy_static! {
     pub static ref CCNOT: TripleGate = {
-        let mut vec = vec![Complex::new(0., 0.,); 64];
-        for i in 0..6 {
-            vec[i * 8 + i] = Complex::new(1., 0.);
-        }
-
-        vec[6 * 8 + 7] = Complex::new(1., 0.);
-        vec[7 * 8 + 6] = Complex::new(1., 0.);
-
         TripleGate {
-            matrix: Array::from_shape_vec((8, 8), vec).unwrap()
+            matrix: carray![
+                [1., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 1., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 1., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 1., 0., 0., 0., 0.],
+                [0., 0., 0., 0., 1., 0., 0., 0.],
+                [0., 0., 0., 0., 0., 1., 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 1.],
+                [0., 0., 0., 0., 0., 0., 1., 0.]
+            ]
         }
     };
 }
