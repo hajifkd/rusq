@@ -172,3 +172,20 @@ fn operate_ccnot() {
         1, 1, 1 => 1, 1, 0;
     });
 }
+
+#[test]
+fn operate_cswap() {
+    let mut sim = rusq::simulator::QuantumSimulator::new(3);
+    let qubits = sim.get_qubits();
+
+    logic!((sim, qubits, CSWAP) => {
+        0, 0, 0 => 0, 0, 0;
+        0, 0, 1 => 0, 0, 1;
+        0, 1, 0 => 0, 1, 0;
+        0, 1, 1 => 0, 1, 1;
+        1, 0, 0 => 1, 0, 0;
+        1, 0, 1 => 1, 1, 0;
+        1, 1, 0 => 1, 0, 1;
+        1, 1, 1 => 1, 1, 1;
+    });
+}
