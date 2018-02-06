@@ -102,4 +102,16 @@ lazy_static! {
             ],
         }
     };
+
+    pub static ref SQNOT: SingleGate = {
+        SingleGate {
+            matrix: carray![
+                [1., 1.],
+                [1., 1.]
+            ] / 2. + carray_i![
+                [ 1., -1.],
+                [-1.,  1.]
+            ] / 2.,
+        }
+    };
 }

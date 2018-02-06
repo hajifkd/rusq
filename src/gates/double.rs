@@ -36,6 +36,15 @@ macro_rules! carray {
     }};
 }
 
+macro_rules! carray_i {
+    ( $([$($x: expr),*]),* ) => {{
+        use num::complex::Complex;
+        array![
+            $([$(Complex::new(0., $x)),*]),*
+        ]
+    }};
+}
+
 ///
 /// An trait for the types which accept operations for two qubits.
 ///
@@ -45,7 +54,7 @@ pub trait DoubleGateApplicator {
     ///
     fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit);
 
-    gen_gates!(CNOT, SWAP);
+    gen_gates!(CNOT, SWAP, SQSWAP);
 }
 
 lazy_static! {
@@ -67,6 +76,22 @@ lazy_static! {
                 [0., 0., 1., 0.],
                 [0., 1., 0., 0.],
                 [0., 0., 0., 1.]
+            ],
+        }
+    };
+
+    pub static ref SQSWAP: DoubleGate = {
+        DoubleGate {
+            matrix: carray![
+                [1.,  0.,  0., 0.],
+                [0., 0.5, 0.5, 0.],
+                [0., 0.5, 0.5, 0.],
+                [0.,  0.,  0., 1.]
+            ] + carray_i![
+                [0.,   0.,   0., 0.],
+                [0.,  0.5, -0.5, 0.],
+                [0., -0.5,  0.5, 0.],
+                [0.,   0.,   0., 0.]
             ],
         }
     };
