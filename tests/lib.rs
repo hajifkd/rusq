@@ -2,6 +2,35 @@ extern crate rusq;
 
 use rusq::prelude::*;
 
+macro_rules! logic {
+    ( ($sim: ident, $qubits: ident, $gate: ident) => {} ) => {};
+
+    ( ($sim: ident, $qubits: ident, $gate: ident) => { $($input: expr),+ => $($result: expr),+ ; $($e: tt)* } ) => {
+        {
+            let mut qubits_iter = $qubits.iter();
+            $({
+                let qubit = qubits_iter.next().unwrap();
+                set(&mut $sim, qubit, if $input == 0 { MeasuredResult::Zero } else { MeasuredResult::One });
+            });*
+
+            let mut index = -1;
+            $sim.$gate($({
+                index += 1;
+                let _ = $input;
+                &$qubits[index as usize]
+            }),*);
+
+            let mut qubits_iter = $qubits.iter();
+            $({
+                let qubit = qubits_iter.next().unwrap();
+                assert_eq!(if $result == 0 { MeasuredResult::Zero } else { MeasuredResult::One }, $sim.measure(qubit));
+            });*
+        }
+
+        logic!(($sim, $qubits, $gate) => { $($e)* })
+    };
+}
+
 fn set(sim: &mut QuantumSimulator, qubit: &Qubit, r: MeasuredResult) {
     if sim.measure(qubit) != r {
         sim.X(qubit);
@@ -64,37 +93,25 @@ fn operate_cnot() {
     let mut sim = rusq::simulator::QuantumSimulator::new(2);
     let qubits = sim.get_qubits();
 
-    set(&mut sim, &qubits[0], MeasuredResult::One);
-    assert_eq!(sim.measure(&qubits[0]), MeasuredResult::One);
-
-    set(&mut sim, &qubits[1], MeasuredResult::Zero);
-    assert_eq!(sim.measure(&qubits[1]), MeasuredResult::Zero);
-
-    sim.CNOT(&qubits[0], &qubits[1]);
-    assert_eq!(sim.measure(&qubits[1]), MeasuredResult::One);
+    logic!((sim, qubits, CNOT) => {
+        0, 0 => 0, 0;
+        0, 1 => 0, 1;
+        1, 0 => 1, 1;
+        1, 1 => 1, 0;
+    });
 }
 
 #[test]
 fn operate_swap() {
-    for (b0, b1) in vec![
-        (MeasuredResult::Zero, MeasuredResult::Zero),
-        (MeasuredResult::Zero, MeasuredResult::One),
-        (MeasuredResult::One, MeasuredResult::Zero),
-        (MeasuredResult::One, MeasuredResult::One),
-    ] {
-        let mut sim = rusq::simulator::QuantumSimulator::new(2);
-        let qubits = sim.get_qubits();
+    let mut sim = rusq::simulator::QuantumSimulator::new(2);
+    let qubits = sim.get_qubits();
 
-        set(&mut sim, &qubits[0], b0);
-        assert_eq!(sim.measure(&qubits[0]), b0);
-
-        set(&mut sim, &qubits[1], b1);
-        assert_eq!(sim.measure(&qubits[1]), b1);
-
-        sim.SWAP(&qubits[0], &qubits[1]);
-        assert_eq!(sim.measure(&qubits[0]), b1);
-        assert_eq!(sim.measure(&qubits[1]), b0);
-    }
+    logic!((sim, qubits, SWAP) => {
+        0, 0 => 0, 0;
+        0, 1 => 1, 0;
+        1, 0 => 0, 1;
+        1, 1 => 1, 1;
+    });
 }
 
 #[test]
@@ -119,32 +136,14 @@ fn operate_ccnot() {
     let mut sim = rusq::simulator::QuantumSimulator::new(3);
     let qubits = sim.get_qubits();
 
-    set(&mut sim, &qubits[0], MeasuredResult::One);
-    assert_eq!(sim.measure(&qubits[0]), MeasuredResult::One);
-
-    set(&mut sim, &qubits[1], MeasuredResult::One);
-    assert_eq!(sim.measure(&qubits[1]), MeasuredResult::One);
-
-    set(&mut sim, &qubits[2], MeasuredResult::Zero);
-    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
-    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
-    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::One);
-
-    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
-    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
-
-    set(&mut sim, &qubits[0], MeasuredResult::One);
-    set(&mut sim, &qubits[1], MeasuredResult::Zero);
-    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
-    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
-
-    set(&mut sim, &qubits[0], MeasuredResult::Zero);
-    set(&mut sim, &qubits[1], MeasuredResult::One);
-    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
-    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
-
-    set(&mut sim, &qubits[0], MeasuredResult::Zero);
-    set(&mut sim, &qubits[1], MeasuredResult::Zero);
-    sim.CCNOT(&qubits[0], &qubits[1], &qubits[2]);
-    assert_eq!(sim.measure(&qubits[2]), MeasuredResult::Zero);
+    logic!((sim, qubits, CCNOT) => {
+        0, 0, 0 => 0, 0, 0;
+        0, 0, 1 => 0, 0, 1;
+        0, 1, 0 => 0, 1, 0;
+        0, 1, 1 => 0, 1, 1;
+        1, 0, 0 => 1, 0, 0;
+        1, 0, 1 => 1, 0, 1;
+        1, 1, 0 => 1, 1, 1;
+        1, 1, 1 => 1, 1, 0;
+    });
 }
