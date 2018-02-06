@@ -144,6 +144,21 @@ fn operate_cnot() {
 }
 
 #[test]
+fn operate_cnot_with_redundancy() {
+    let mut sim = rusq::simulator::QuantumSimulator::new(10);
+    let qubits = sim.get_qubits();
+
+    let ref targets = [&qubits[2], &qubits[5]];
+
+    logic!((sim, targets, CNOT) => {
+        0, 0 => 0, 0;
+        0, 1 => 0, 1;
+        1, 0 => 1, 1;
+        1, 1 => 1, 0;
+    });
+}
+
+#[test]
 fn operate_swap() {
     let mut sim = rusq::simulator::QuantumSimulator::new(2);
     let qubits = sim.get_qubits();
@@ -162,6 +177,24 @@ fn operate_ccnot() {
     let qubits = sim.get_qubits();
 
     logic!((sim, qubits, CCNOT) => {
+        0, 0, 0 => 0, 0, 0;
+        0, 0, 1 => 0, 0, 1;
+        0, 1, 0 => 0, 1, 0;
+        0, 1, 1 => 0, 1, 1;
+        1, 0, 0 => 1, 0, 0;
+        1, 0, 1 => 1, 0, 1;
+        1, 1, 0 => 1, 1, 1;
+        1, 1, 1 => 1, 1, 0;
+    });
+}
+
+#[test]
+fn operate_ccnot_with_redundancy() {
+    let mut sim = rusq::simulator::QuantumSimulator::new(10);
+    let qubits = sim.get_qubits();
+    let ref targets = [&qubits[3], &qubits[6], &qubits[8]];
+
+    logic!((sim, targets, CCNOT) => {
         0, 0, 0 => 0, 0, 0;
         0, 0, 1 => 0, 0, 1;
         0, 1, 0 => 0, 1, 0;
