@@ -55,6 +55,12 @@ pub trait SingleGateApplicator {
     fn apply_single(&mut self, matrix: &Array2<Complex<f64>>, qubit: &Qubit);
 
     gen_gates!(H, X, Y, Z, ID);
+
+    fn phase(&mut self, phi: f64, qubit: &Qubit) {
+        let mut matrix = carray![[1., 0.], [0., 0.]];
+        matrix[[1, 1]] = Complex::new(phi.cos(), phi.sin());
+        self.apply_single(&matrix, qubit);
+    }
 }
 
 lazy_static! {

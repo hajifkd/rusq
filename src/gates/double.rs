@@ -55,6 +55,17 @@ pub trait DoubleGateApplicator {
     fn apply_double(&mut self, matrix: &Array2<Complex<f64>>, qubit1: &Qubit, qubit2: &Qubit);
 
     gen_gates!(CNOT, SWAP, SQSWAP);
+
+    fn cphase(&mut self, phi: f64, qubit1: &Qubit, qubit2: &Qubit) {
+        let mut matrix = carray![
+            [1., 0., 0., 0.],
+            [0., 1., 0., 0.],
+            [0., 0., 1., 0.],
+            [0., 0., 0., 0.]
+        ];
+        matrix[[3, 3]] = Complex::new(phi.cos(), phi.sin());
+        self.apply_double(&matrix, qubit1, qubit2);
+    }
 }
 
 lazy_static! {
