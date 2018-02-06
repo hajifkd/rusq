@@ -69,8 +69,32 @@ fn operate_cnot() {
 
     set(&mut sim, &qubits[1], MeasuredResult::Zero);
     assert_eq!(sim.measure(&qubits[1]), MeasuredResult::Zero);
+
     sim.CNOT(&qubits[0], &qubits[1]);
     assert_eq!(sim.measure(&qubits[1]), MeasuredResult::One);
+}
+
+#[test]
+fn operate_swap() {
+    for (b0, b1) in vec![
+        (MeasuredResult::Zero, MeasuredResult::Zero),
+        (MeasuredResult::Zero, MeasuredResult::One),
+        (MeasuredResult::One, MeasuredResult::Zero),
+        (MeasuredResult::One, MeasuredResult::One),
+    ] {
+        let mut sim = rusq::simulator::QuantumSimulator::new(2);
+        let qubits = sim.get_qubits();
+
+        set(&mut sim, &qubits[0], b0);
+        assert_eq!(sim.measure(&qubits[0]), b0);
+
+        set(&mut sim, &qubits[1], b1);
+        assert_eq!(sim.measure(&qubits[1]), b1);
+
+        sim.SWAP(&qubits[0], &qubits[1]);
+        assert_eq!(sim.measure(&qubits[0]), b1);
+        assert_eq!(sim.measure(&qubits[1]), b0);
+    }
 }
 
 #[test]
