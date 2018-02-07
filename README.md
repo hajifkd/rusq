@@ -1,6 +1,6 @@
 # Rusq
 [![crates.io](https://img.shields.io/crates/v/rusq.svg)](https://crates.io/crates/rusq)
-[![docs.rs](https://docs.rs/rusq/badge.svg)](https://crates.io/crates/rusq)
+[![docs.rs](https://docs.rs/rusq/badge.svg)](https://docs.rs/rusq/0.1.0/rusq/)
 [![Build Status](https://travis-ci.org/hajifkd/rusq.svg?branch=master)](https://travis-ci.org/hajifkd/rusq)
 
 Quantum computing simulator in Rust
