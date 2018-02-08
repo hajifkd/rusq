@@ -77,7 +77,7 @@ impl QuantumSimulator {
     fn apply(&mut self, qubits: &[&Qubit], matrix: &Array2<Complex<f64>>) {
         let dim = qubits.len();
 
-        let masks = mask_vec(&mut qubits.iter().map(|&x| x).collect::<Vec<_>>());
+        let masks = mask_vec(qubits);
         for i in 0..(self.states.len() >> dim) {
             let indices = indices_vec(i, qubits, &masks, dim);
             let values = indices.iter().map(|&i| self.states[i]).collect::<Vec<_>>();
@@ -102,7 +102,8 @@ fn index_pair(index: usize, qubit: &Qubit, upper_mask: usize, lower_mask: usize)
     (index_zero, index_one)
 }
 
-fn mask_vec(qubits: &mut [&Qubit]) -> Vec<usize> {
+fn mask_vec(qubits: &[&Qubit]) -> Vec<usize> {
+    let mut qubits = qubits.to_owned();
     qubits.sort_by(|a, b| a.index.cmp(&b.index));
     let mut res = vec![0; qubits.len() + 1];
 

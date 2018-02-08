@@ -23,7 +23,7 @@ First, add the following to `Cargo.toml`
 
 ```toml
 [dependencies]
-rusq = { version = "*", git = "https://github.com/hajifkd/rusq.git" }
+rusq = "0.1"
 ```
 
 For example codes, check out the following section.
