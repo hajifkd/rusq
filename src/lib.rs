@@ -56,4 +56,6 @@ pub trait QuantumMachine {
     /// Measures the given qubit.
     /// Note that the qubit is expected to be projected to the corresponding state.
     fn measure(&mut self, qubit: &Qubit) -> MeasuredResult;
+
+    fn measure_x(&mut self, qubit: &Qubit) -> MeasuredResult;
 }

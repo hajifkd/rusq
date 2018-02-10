@@ -158,6 +158,11 @@ impl QuantumMachine for QuantumSimulator {
         }
     }
 
+    fn measure_x(&mut self, qubit: &Qubit) -> MeasuredResult {
+        self.H(qubit);
+        self.measure(qubit)
+    }
+
     fn get_qubits(&self) -> Vec<Qubit> {
         (0..self.dimension).map(|x| Qubit { index: x }).collect()
     }
