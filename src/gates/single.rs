@@ -67,8 +67,8 @@ lazy_static! {
     pub static ref H: SingleGate = {
         SingleGate {
             matrix: carray![
-                [1., -1.],
-                [1.,  1.]
+                [1.,  1.],
+                [1., -1.]
             ] / (2f64).sqrt(),
         }
     };
